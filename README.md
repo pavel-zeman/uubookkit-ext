@@ -12,7 +12,7 @@ Other features:
 - Quick search field at the top of the page supporting fulltext search of the page titles
 - Menu
   - Long names in menu do not wrap (full name is displayed by moving cursor over a menu item)
-  - Width of left navigation menu can be resized using drag & drop.
+  - Width of left pane can be resized using drag & drop.
   - Specific menu items are colored (Business, uuSubApp, *Stores, uuCMD)
 - Scenarios
   - Add option to copy HDS and alternative scenarios with ordering numbers as a program comments into clipboard.
@@ -24,6 +24,7 @@ Keyboard shortcuts:
 - *Ctrl+S* saves the data in edit mode and ends the edit mode. 
 - *Ctrl+Q* or *Alt+N* or *Alt+Shift+N* (depending on browser) focuses the quick search field at the top of the page.
 - *F4* refreshes just current page content (not the whole web page).
+- *Ctrl* activates pop-up allowing to copy links to each page in the left pane.
 
 ## Installation
 1. Add https://tampermonkey.net/ into your browser (supported for Chrome, Firefox, Edge, Safari, tested for Chrome, Firefox).

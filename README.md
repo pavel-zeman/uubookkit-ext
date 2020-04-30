@@ -25,9 +25,9 @@ Keyboard shortcuts:
 - *Ctrl+Q* or *Alt+N* or *Alt+Shift+N* (depending on browser) focuses the quick search field at the top of the page.
 - *F4* refreshes just current page content (not the whole web page).
 
-# Install as a User Script - Tampermonkey
-1. Add https://tampermonkey.net/ into your browser
+## Installation
+1. Add https://tampermonkey.net/ into your browser (supported for Chrome, Firefox, Edge, Safari, tested for Chrome, Firefox).
 2. Install User script from this URL: [uubookkit-ext.user.js](https://github.com/pavel-zeman/uubookkit-ext/raw/master/uubookkit-ext.user.js)
 
-# Configuration
+## Configuration
 - In case of [uuDockitHelper](https://github.com/jiridudekusy/uuDockitHelper) is executed on different IP or port than http://localhost:4323/vendor-app-subapp/0-0/editor (the default port could be 1234) please edit the `mdUrl` in script. 

@@ -10,6 +10,8 @@ Additional links and icons in the page:
 
 Other features:
 - Quick search field at the top of the page supporting fulltext search of the page titles
+- Spellcheck is enabled in rich text editor in edit mode
+- Mouse click in edit mode results in a mouse click of any visible pencil icon, which effectively opens current section for editing
 - Menu
   - Long names in menu do not wrap (full name is displayed by moving cursor over a menu item)
   - Width of left pane can be resized using drag & drop.
@@ -20,6 +22,7 @@ Other features:
 Keyboard shortcuts:
 - *ESC* closes edit window.
 - *E* starts edit mode of the page and all its sections.
+- *E* in edit mode clicks any visible pencil icon
 - *Shift+E* does the same as *E* and additionally starts edit mode of all sub-sections. This make take a couple of seconds for a page with a complex structure! And it also does not work in all cases, because some sub-sections are loaded lazily.
 - *Ctrl+S* saves the data in edit mode and ends the edit mode. 
 - *Ctrl+Q* or *Alt+N* or *Alt+Shift+N* (depending on browser) focuses the quick search field at the top of the page.

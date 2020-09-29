@@ -3,7 +3,7 @@
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
 // @version      0.12.0
 // @description  Multiple Bookkit usability improvements
-// @author       Petr Havelka, Josef Jetmar, Ales Holy
+// @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @match        https://uuapp.plus4u.net/uu-bookkit-maing01/*
@@ -699,10 +699,10 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   let clickLinkByName = function (name) {
     // console.log('Click link by name = "' + name + '"')
 
-    // click to "Obsah str·nky" to expand menu
+    // click to "Obsah str√°nky" to expand menu
     $('button.uu5-bricks-dropdown-button').each(function () {
       let item = $(this);
-      if (item.text() == "Obsah str·nky" || item.text() == "Page body") item.click();
+      if (item.text() == "Obsah str√°nky" || item.text() == "Page body") item.click();
     });
 
     // find all links in control menu
@@ -989,7 +989,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
       olElement.insertAdjacentHTML('beforebegin', `<div class="bookkit-ext-copy-scenario-panel uu5-common-div uu-uuapp-designkit-embedded-text-header-bar">
             <button class="bookkit-ext-copy-scenario-button uu5-bricks-button uu5-bricks-button-m uu5-bricks-button-transparent" type="button">
                 <span class="uu5-bricks-icon mdi mdi-content-copy"></span>
-                <span class="bookkit-ext-copy uu5-bricks-span uu5-bricks-lsi-item">KopÌrovat programov˝ koment·¯</span>
+                <span class="bookkit-ext-copy uu5-bricks-span uu5-bricks-lsi-item">Kop√≠rovat programov√Ω koment√°≈ô</span>
             </button>
         </div>`);
 
@@ -1025,7 +1025,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
       leftNavigationElementFixed.width(leftWidth);
       leftNavigationElementGhost.width(leftWidth);
       leftNavigationElementGhost.css("max-width", leftWidth + "px");
-    }
+    }                                                    
 
     if (!leftNavigationElementFixed.data("initialized")) {
       leftNavigationElementFixed.data("initialized", true);
@@ -1051,11 +1051,24 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   }, 1000);
 
   // Adds mouse click listener, which click any visible pencil icon
-  window.addEventListener("click", () => {
+  window.addEventListener("click", (e) => {
     if (isInEditMode()) {
-      document.querySelectorAll("span.mdi-pencil").forEach(span => {
-        if (span.offsetParent) span.click();
-      });
+      // Check if the target or any of its parents is button - in this case, ignore the click
+      let buttonFound = false;
+      let element = e.target;
+      while (element) {
+        if (element.tagName === "BUTTON") {
+          buttonFound = true;
+          break;
+        }
+        element = element.parentNode;
+      }
+      if (!buttonFound) {
+        // No button found, so process the click
+        document.querySelectorAll("span.mdi-pencil").forEach(span => {
+          if (span.offsetParent) span.click();
+        });
+      }
     }
   });
 

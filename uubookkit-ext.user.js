@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.13.0
+// @version      0.14.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -383,6 +383,21 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
       if (currentToc.length > 0) currentToc.remove();
       $(result).insertAfter($("div.uu-bookkit-page-ready > h1"));
     }
+  }
+
+  /**
+   * Clicks any pencil icon to open section for editing.
+   * Returns true, if any icon was clicked.
+   */
+  function clickPencil() {
+    let result = false;
+    document.querySelectorAll("span.mdi-pencil.uudcc-bricks-control-button-icon-node").forEach(span => {
+      if (span.offsetParent) {
+        span.click();
+        result = true;
+      }
+    });
+    return result;
   }
 
 
@@ -853,12 +868,9 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
       case "E":
         if (isInEditMode()) {
           // Click any visible pencil icon
-          document.querySelectorAll("span.mdi-pencil").forEach(span => {
-            if (span.offsetParent) {
-              span.click();
-              e.preventDefault();
-            }
-          });
+          if (clickPencil()) {
+            e.preventDefault();
+          }
         } else {
           startEditMode(e.shiftKey);
         }
@@ -1033,7 +1045,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
         option: {"handles": "e"},
         resize: ( event, ui ) => { localStorage.setItem(RES_LEFT_NAV_KEY, ui.size.width); },
         containment: 'document'
-      });
+      });                            
     }
   };
 
@@ -1053,21 +1065,19 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   // Adds mouse click listener, which click any visible pencil icon
   window.addEventListener("click", (e) => {
     if (isInEditMode()) {
-      // Check if the target or any of its parents is button - in this case, ignore the click
-      let buttonFound = false;
+      // Check if the target or any of its parents is a forbidden element
+      let searchAndClickPencil = true;
       let element = e.target;
+      let forbiddenElements = {"BUTTON": true, "TEXTAREA": true, "INPUT": true, "IMG": true};
       while (element) {
-        if (element.tagName === "BUTTON") {
-          buttonFound = true;
+        if (forbiddenElements[element.tagName]) {
+          searchAndClickPencil = false;
           break;
         }
         element = element.parentNode;
       }
-      if (!buttonFound) {
-        // No button found, so process the click
-        document.querySelectorAll("span.mdi-pencil").forEach(span => {
-          if (span.offsetParent) span.click();
-        });
+      if (searchAndClickPencil) {
+        clickPencil();
       }
     }
   });

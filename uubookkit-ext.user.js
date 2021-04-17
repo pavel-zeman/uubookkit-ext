@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.14.0
+// @version      0.15.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -10,6 +10,7 @@
 // @match        https://docs.plus4u.net/book*
 // @match        https://docs.plus4u.net/uaf/*
 // @grant        GM_addStyle
+// @grant        unsafeWindow
 // @require      http://code.jquery.com/jquery-2.1.4.min.js
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.js
 // @resource     jqueryUiCss https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css
@@ -669,7 +670,6 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   let injectToHttpRequest = function () {
     let origOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
-
       if (url.includes("loadBook")) {
         this.addEventListener('load', function () {
           currentBook = JSON.parse(this.responseText);
@@ -690,6 +690,29 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
         });
       }
       origOpen.apply(this, arguments);
+    };
+
+    // Some calls use new fetch API, so we have to intercept it as well
+    const originalFetch = unsafeWindow.fetch;
+    unsafeWindow.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      const url = args[0];
+      if (url.includes("loadBook") || url.includes("loadPage") || url.includes("getBookStructure")) {
+        response.clone().json()
+          .then(body => {
+            if (url.includes("loadBook")) {
+              currentBook = body;
+              searchInit();
+            } else if (url.includes("loadPage")) {
+              currentPageData = body;
+              initPage();
+            } else if (url.includes("getBookStructure")) {
+              currentBookStructure = body;
+              searchInit();
+            }
+          });
+      }
+      return response;
     };
   };
 
@@ -861,8 +884,6 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   });
 
   $(document).keydown(function (e) {
-    //console.log(e);
-
     switch (e.key) {
       case "e": // Start edit mode
       case "E":
@@ -1045,7 +1066,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
         option: {"handles": "e"},
         resize: ( event, ui ) => { localStorage.setItem(RES_LEFT_NAV_KEY, ui.size.width); },
         containment: 'document'
-      });                            
+      });
     }
   };
 

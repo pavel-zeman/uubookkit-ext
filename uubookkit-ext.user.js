@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.15.0
+// @version      0.16.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -211,6 +211,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   let currentBook = {};
   let currentPageData = {};
   let currentBookStructure = {};
+  let currentComments = {};
   let menuIndex = {};
   let ctrlKey = false;
   let ctrlKeyTimeout = null;
@@ -401,65 +402,108 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     return result;
   }
 
+  let filterComments = function(rootPageCode) {
+    let page = menuIndex[rootPageCode];
+    if (page) {
+      const path = [];
+      page.path.forEach(item => path.push(item));
+      path.push(page.name);
+      const validPages = new Set();
+      Object.entries(menuIndex).forEach(itemArray => {
+        const item = itemArray[1];
+        if (item.path.length >= path.length) {
+          let found = true;
+          for(let i = 0; i < path.length; i++) {
+            if (item.path[i] !== path[i]) {
+              found = false;
+              break;
+            }
+          }
+          if (found) validPages.add(itemArray[0]);
+        }
+      });
+      $("div.uu-bookkit-review-show-comments > div.uu-bookkit-review-show-comments-thread").each(function(i) {
+        const comment = currentComments.itemList[i];
+        this.style.display = validPages.has(comment.page) ? "block" : "none";
+      });
+    } else {
+      $("div.uu-bookkit-review-show-comments > div.uu-bookkit-review-show-comments-thread").each(function() {
+        this.style.display = "block";
+      });
+    }
+    // Scroll to the top (newly added elements force the page to scroll to the bottom)
+    setTimeout(() => window.scrollTo(0, 0), 0);
+  }
 
 
   // init of each bookkit page
   let initPage = function () {
-    let page = $(".uu-bookkit-page-ready");
-    // if page not ready do it later
-    if (!page.length) {
-      setTimeout(initPage, 200);
-      return;
+    let isCommentsPage = $("div.uu-bookkit-review-show-comments-button-group").length > 0;
+
+    if (isCommentsPage) {
+      if ($("#commentFilter").length === 0) {
+        let commentFilter = $("<input type='text' id='commentFilter'>");
+        commentFilter.change(() => filterComments($("#commentFilter").val()));
+        $("div.uu-bookkit-review-show-comments-button-group").append(commentFilter);
+      }
+    } else {
+
+      let page = $(".uu-bookkit-page-ready");
+      // if page not ready do it later
+      if (!page.length) {
+        setTimeout(initPage, 200);
+        return;
+      }
+
+      // page is already done - remove all links
+      if (page.hasClass("bookkit-ext-page-done")) {
+        $(".bookkit-ext-md").remove();
+        $(".bookkit-ext-page-reload").remove();
+        $(".bookkit-ext-copy-jira-link").remove();
+        $(".bookkit-ext-copy-md-link").remove();
+        $(".bookkit-ext-copy-scenario-panel").remove();
+      }
+
+      // update HTML - add icons and links
+      let editIcon = 'uu5-bricks-icon mdi mdi-lead-pencil';
+
+      let pageTitle = $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header");
+      let pageTitleSpan = pageTitle.find(".uu5-bricks-span").addClass("bookkit-ext-page-title-span");
+
+      // add MD link
+      pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
+
+      // page refresh icon
+      pageTitle.append('<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-page-reload" title="Reload current page" accesskey="r"></span>');
+
+      // copy link - JIRA format
+      pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard in JIRA format" data-page-name="' + pageTitleSpan.text() + '">copy link</span>');
+      // copy link - MD format
+      pageTitle.append('<span class="bookkit-ext-copy-md-link" title="Copy link to current page into clipboard in MD format" data-page-name="' + pageTitleSpan.text() + '">copy MD link</span>');
+
+      // add copy scenarios
+      initCopyScenarios();
+
+      // add colours into menu
+      colorizeMenu();
+
+      // mark invalid link by rec color
+      colorizeInvalidLinks();
+
+      // add resizable left navigation
+      initResizableLeftNavigation();
+
+      // add title attributes to the navigation tree items
+      addNavigationTitles();
+
+      // add table of content
+      if (localStorage.getItem(LS_TOC_KEY) == "true") addToc();
+
+      initAutocomplete($("#autocomplete-input"), menuIndex);
+
+      // mark page as ready
+      page.addClass("bookkit-ext-page-done");
     }
-
-    // page is already done - remove all links
-    if (page.hasClass("bookkit-ext-page-done")) {
-      $(".bookkit-ext-md").remove();
-      $(".bookkit-ext-page-reload").remove();
-      $(".bookkit-ext-copy-jira-link").remove();
-      $(".bookkit-ext-copy-md-link").remove();
-      $(".bookkit-ext-copy-scenario-panel").remove();
-    }
-
-    // update HTML - add icons and links
-    let editIcon = 'uu5-bricks-icon mdi mdi-lead-pencil';
-
-    let pageTitle = $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header");
-    let pageTitleSpan = pageTitle.find(".uu5-bricks-span").addClass("bookkit-ext-page-title-span");
-
-    // add MD link
-    pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
-
-    // page refresh icon
-    pageTitle.append('<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-page-reload" title="Reload current page" accesskey="r"></span>');
-
-    // copy link - JIRA format
-    pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard in JIRA format" data-page-name="' + pageTitleSpan.text() + '">copy link</span>');
-    // copy link - MD format
-    pageTitle.append('<span class="bookkit-ext-copy-md-link" title="Copy link to current page into clipboard in MD format" data-page-name="' + pageTitleSpan.text() + '">copy MD link</span>');
-
-    // add copy scenarios
-    initCopyScenarios();
-
-    // add colours into menu
-    colorizeMenu();
-
-    // mark invalid link by rec color
-    colorizeInvalidLinks();
-
-    // add resizable left navigation
-    initResizableLeftNavigation();
-
-    // add title attributes to the navigation tree items
-    addNavigationTitles();
-
-    // add table of content
-    if (localStorage.getItem(LS_TOC_KEY) == "true") addToc();
-
-    initAutocomplete($("#autocomplete-input"), menuIndex);
-
-    // mark page as ready
-    page.addClass("bookkit-ext-page-done");
 
   };
 
@@ -685,7 +729,6 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
       if (url.includes("getBookStructure")) {
         this.addEventListener('load', function () {
           currentBookStructure = JSON.parse(this.responseText);
-          // console.log(currentBookStructure);
           searchInit();
         });
       }
@@ -697,7 +740,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     unsafeWindow.fetch = async (...args) => {
       const response = await originalFetch(...args);
       const url = args[0];
-      if (url.includes("loadBook") || url.includes("loadPage") || url.includes("getBookStructure")) {
+      if (url.includes("loadBook") || url.includes("loadPage") || url.includes("getBookStructure") || url.includes("listCommentThreads")) {
         response.clone().json()
           .then(body => {
             if (url.includes("loadBook")) {
@@ -705,6 +748,11 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
               searchInit();
             } else if (url.includes("loadPage")) {
               currentPageData = body;
+              initPage();
+            } else if (url.includes("listCommentThreads")) {
+              currentComments = body;
+              // Remove comments, which have no corresponding page
+              currentComments.itemList = currentComments.itemList.filter(item => menuIndex[item.page]);
               initPage();
             } else if (url.includes("getBookStructure")) {
               currentBookStructure = body;
@@ -724,7 +772,6 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
   // click on element
   let click = function(element) {
-    console.log(element);
     // mark link with #temp
     element.attr("id", "temp");
     // click on link
@@ -1058,7 +1105,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
       leftNavigationElementFixed.width(leftWidth);
       leftNavigationElementGhost.width(leftWidth);
       leftNavigationElementGhost.css("max-width", leftWidth + "px");
-    }                                                    
+    }
 
     if (!leftNavigationElementFixed.data("initialized")) {
       leftNavigationElementFixed.data("initialized", true);

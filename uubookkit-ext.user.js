@@ -1,7 +1,7 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.16.0
+// @version      0.17.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -9,6 +9,7 @@
 // @match        https://uuapp.plus4u.net/uu-bookkit-maing01/*
 // @match        https://docs.plus4u.net/book*
 // @match        https://docs.plus4u.net/uaf/*
+// @match        https://uuapp.plus4u.net/uu-dockit-maing02/*
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @require      http://code.jquery.com/jquery-2.1.4.min.js
@@ -218,10 +219,12 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   let copyMenuVisible = false;
   let supportedSubSectionTypes2 = [ "uu5-richtext-block", "uu-uuapp-designkit-business-use-case-list", "uucontentkit-table", "uu-uuapp-designkit-embedded-text"];
   let supportedSubSectionTypes1 = [ "uu5-bricks-section" ];
+  let isBookkit = window.location.href.indexOf("uu-dockit-") < 0;
 
   /** Returns an instance of the Update (or Edit) button */
   function getUpdateButton() {
-    return $("div.uu-bookkit-book-top div.uu-bookkit-control-bar-executives > button");
+    // First selector works for bookkit, second one for dockit
+    return $("div.uu-bookkit-book-top div.uu-bookkit-control-bar-executives > button, div.plus4u5-app-executive-panel > button.uu5-bricks-button-filled");
   }
 
   /**
@@ -285,19 +288,23 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   /** Waits for the edit mode to be started and then starts edit mode for all sections */
   function postStartEditMode(openSubsections, forbiddenSections) {
     if (!isInEditMode()) {
-      setTimeout(() => postStartEditMode(openSubsections, forbiddenSections), 1000);
+      setTimeout(() => postStartEditMode(openSubsections, forbiddenSections), 200);
       return;
     }
 
     let initialized = {};
 
-    let items = $("div.uudcc-bricks-toolbar-controls > button.color-schema-grey-rich").each((index, item) => {
+    let items = $("div.uudcc-bricks-toolbar-controls > button.color-schema-grey-rich");
+    // Open sections in reverse order (i.e. from the last one)
+    // If opening them from the first one, it seems, that each section disables the open button for the following one, so the following one is not opened
+    for(let i = items.length - 1; i >= 0; i--) {
+      const item = items[i];
       let sectionParent = item.parentNode.parentNode.parentNode;
       if (!forbiddenSections[sectionParent.id]) {
         initialized[item.parentNode.id] = false;
         item.click();
       }
-    });
+    }
     if (openSubsections) {
       waitForSectionsEditMode(initialized);
     }
@@ -383,7 +390,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
       result += "</div>";
       let currentToc = $("div.toc");
       if (currentToc.length > 0) currentToc.remove();
-      $(result).insertAfter($("div.uu-bookkit-page-ready > h1"));
+      $(result).insertAfter($("div.uu-bookkit-page-ready > h1, div.uudockit-core-sheetready > h1"));
     }
   }
 
@@ -438,81 +445,92 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
   // init of each bookkit page
   let initPage = function () {
-    let isCommentsPage = $("div.uu-bookkit-review-show-comments-button-group").length > 0;
+    if (isBookkit) {
+      let isCommentsPage = $("div.uu-bookkit-review-show-comments-button-group").length > 0;
 
-    if (isCommentsPage) {
-      if ($("#commentFilter").length === 0) {
-        let commentFilter = $("<input type='text' id='commentFilter'>");
-        commentFilter.change(() => filterComments($("#commentFilter").val()));
-        $("div.uu-bookkit-review-show-comments-button-group").append(commentFilter);
+      if (isCommentsPage) {
+        if ($("#commentFilter").length === 0) {
+          let commentFilter = $("<input type='text' id='commentFilter'>");
+          commentFilter.change(() => filterComments($("#commentFilter").val()));
+          $("div.uu-bookkit-review-show-comments-button-group").append(commentFilter);
+        }
+      } else {
+
+        let page = $(".uu-bookkit-page-ready");
+        // if page not ready do it later
+        if (!page.length) {
+          setTimeout(initPage, 200);
+          return;
+        }
+
+        // page is already done - remove all links
+        if (page.hasClass("bookkit-ext-page-done")) {
+          $(".bookkit-ext-md").remove();
+          $(".bookkit-ext-page-reload").remove();
+          $(".bookkit-ext-copy-jira-link").remove();
+          $(".bookkit-ext-copy-md-link").remove();
+          $(".bookkit-ext-copy-scenario-panel").remove();
+        }
+
+        // update HTML - add icons and links
+        let editIcon = 'uu5-bricks-icon mdi mdi-lead-pencil';
+
+        let pageTitle = $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header");
+        let pageTitleSpan = pageTitle.find(".uu5-bricks-span").addClass("bookkit-ext-page-title-span");
+
+        // add MD link
+        pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
+
+        // page refresh icon
+        pageTitle.append('<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-page-reload" title="Reload current page" accesskey="r"></span>');
+
+        // copy link - JIRA format
+        pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard in JIRA format" data-page-name="' + pageTitleSpan.text() + '">copy link</span>');
+        // copy link - MD format
+        pageTitle.append('<span class="bookkit-ext-copy-md-link" title="Copy link to current page into clipboard in MD format" data-page-name="' + pageTitleSpan.text() + '">copy MD link</span>');
+
+        // add copy scenarios
+        initCopyScenarios();
+
+        // add colours into menu
+        colorizeMenu();
+
+        // mark invalid link by rec color
+        colorizeInvalidLinks();
+
+        // add resizable left navigation
+        initResizableLeftNavigation();
+
+        // add title attributes to the navigation tree items
+        addNavigationTitles();
+
+        // add table of content
+        if (localStorage.getItem(LS_TOC_KEY) == "true") addToc();
+
+        initAutocomplete($("#autocomplete-input"), menuIndex);
+
+        // mark page as ready
+        page.addClass("bookkit-ext-page-done");
       }
     } else {
+      // Dockit
 
-      let page = $(".uu-bookkit-page-ready");
-      // if page not ready do it later
-      if (!page.length) {
+      // if page not loaded yet - do it later
+      if (!$("div.uudockit-core-sheetready").length) {
         setTimeout(initPage, 200);
         return;
       }
 
-      // page is already done - remove all links
-      if (page.hasClass("bookkit-ext-page-done")) {
-        $(".bookkit-ext-md").remove();
-        $(".bookkit-ext-page-reload").remove();
-        $(".bookkit-ext-copy-jira-link").remove();
-        $(".bookkit-ext-copy-md-link").remove();
-        $(".bookkit-ext-copy-scenario-panel").remove();
-      }
-
-      // update HTML - add icons and links
-      let editIcon = 'uu5-bricks-icon mdi mdi-lead-pencil';
-
-      let pageTitle = $(".uu-bookkit-page h1 .uu-bookkit-page-ready-header");
-      let pageTitleSpan = pageTitle.find(".uu5-bricks-span").addClass("bookkit-ext-page-title-span");
-
-      // add MD link
-      pageTitle.append('<a href="' + mdUrl + '?page=' + encodeURIComponent(window.location.href) + '" target="_blank" class="bookkit-ext-md">MD</span></a>');
-
-      // page refresh icon
-      pageTitle.append('<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-page-reload" title="Reload current page" accesskey="r"></span>');
-
-      // copy link - JIRA format
-      pageTitle.append('<span class="bookkit-ext-copy-jira-link" title="Copy link to current page into clipboard in JIRA format" data-page-name="' + pageTitleSpan.text() + '">copy link</span>');
-      // copy link - MD format
-      pageTitle.append('<span class="bookkit-ext-copy-md-link" title="Copy link to current page into clipboard in MD format" data-page-name="' + pageTitleSpan.text() + '">copy MD link</span>');
-
-      // add copy scenarios
-      initCopyScenarios();
-
-      // add colours into menu
-      colorizeMenu();
-
-      // mark invalid link by rec color
-      colorizeInvalidLinks();
-
-      // add resizable left navigation
-      initResizableLeftNavigation();
-
-      // add title attributes to the navigation tree items
-      addNavigationTitles();
-
-      // add table of content
-      if (localStorage.getItem(LS_TOC_KEY) == "true") addToc();
-
-      initAutocomplete($("#autocomplete-input"), menuIndex);
-
-      // mark page as ready
-      page.addClass("bookkit-ext-page-done");
+      addToc();
     }
-
   };
 
   // first init of whole webpage
-  let firstInit = function () {
+  let firstInitBookkit = function () {
     let title = $(".uu-bookkit-book-top-text");
     // if page not loaded yet - do it later
     if (!title.length) {
-      setTimeout(firstInit, 3000);
+      setTimeout(firstInitBookkit, 3000);
       return;
     }
 
@@ -533,6 +551,15 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     // init bookkit page
     initPage();
   };
+
+  let firstInitDockit = function() {
+    // if page not loaded yet - do it later
+    if (!$("div.uudockit-core-sheetready").length) {
+      setTimeout(firstInitDockit, 1000);
+      return;
+    }
+    initPage();
+  }
 
   let colorizeMenu = function() {
     $(".plus4u5-app-menu-link").each(function(item) {
@@ -720,7 +747,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
           searchInit();
         });
       }
-      if (url.includes("loadPage")) {
+      if (url.includes("loadPage") || url.includes("sheet/load")) {
         this.addEventListener('load', function () {
           currentPageData = JSON.parse(this.responseText);
           initPage();
@@ -740,13 +767,13 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     unsafeWindow.fetch = async (...args) => {
       const response = await originalFetch(...args);
       const url = args[0];
-      if (url.includes("loadBook") || url.includes("loadPage") || url.includes("getBookStructure") || url.includes("listCommentThreads")) {
+      if (url.includes("loadBook") || url.includes("loadPage") || url.includes("getBookStructure") || url.includes("listCommentThreads") || url.includes("sheet/load")) {
         response.clone().json()
           .then(body => {
             if (url.includes("loadBook")) {
               currentBook = body;
               searchInit();
-            } else if (url.includes("loadPage")) {
+            } else if (url.includes("loadPage") || url.includes("sheet/load")) {
               currentPageData = body;
               initPage();
             } else if (url.includes("listCommentThreads")) {
@@ -764,11 +791,11 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     };
   };
 
-  // do inject
+    // do inject
   injectToHttpRequest();
 
   // first action take after 3s
-  setTimeout(firstInit, 3000);
+  setTimeout(isBookkit ? firstInitBookkit : firstInitDockit, 3000);
 
   // click on element
   let click = function(element) {
@@ -879,9 +906,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   };
 
   // handle all clicks on webpage
-  $(document).click(function (e) {
-    // console.log($(e.target));
-
+  if (isBookkit) $(document).click(function (e) {
     // is it click to refresh button?
     if ($(e.target).hasClass("bookkit-ext-refresh")) {
       // init page
@@ -950,6 +975,9 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
           getUpdateButton().focus();
           getUpdateButton().click();
           e.preventDefault(); // Do not trigger the default browser save handler
+          if (!isBookkit) { // Reinit page for dockit
+            setTimeout(initPage, 1000);
+          }
         }
         break;
 
@@ -970,12 +998,13 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
         break;
 
       case "Control":
-        ctrlKey = true;
-        if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
-        ctrlKeyTimeout = setTimeout(() => $(document).trigger({type: 'keyup', key: 'Control'}), 1000);
-        if (!copyMenuVisible) showCopyOptionsInMenu();
+        if (isBookkit) {
+          ctrlKey = true;
+          if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
+          ctrlKeyTimeout = setTimeout(() => $(document).trigger({type: 'keyup', key: 'Control'}), 1000);
+          if (!copyMenuVisible) showCopyOptionsInMenu();
+        }
         break;
-
     }
 
     /* not working correctly
@@ -986,16 +1015,18 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     */
   });
 
-  $(document).keyup(function (e) {
-    // console.log(e.key);
-    switch (e.key) {
-      case "Control":
-        ctrlKey = false;
-        if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
-        if (copyMenuVisible) hideCopyOptionsInMenu();
-        break;
-    }
-  });
+  if (isBookkit) {
+    $(document).keyup(function (e) {
+      // console.log(e.key);
+      switch (e.key) {
+        case "Control":
+          ctrlKey = false;
+          if (ctrlKeyTimeout) clearTimeout(ctrlKeyTimeout);
+          if (copyMenuVisible) hideCopyOptionsInMenu();
+          break;
+      }
+    });
+  }
 
   // Copy scenarios
 

@@ -1,7 +1,7 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.17.0
+// @version      0.18.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -28,6 +28,7 @@ GM_addStyle(`
 .bookkit-ext-edit,
 .bookkit-ext-refresh,
 .bookkit-ext-toc,
+.bookkit-ext-change-width,
 .bookkit-ext-page-reload {
   margin-left: 0.5em;
   font-size: 24px;
@@ -36,6 +37,9 @@ GM_addStyle(`
 .bookkit-ext-refresh,
  bookkit-ext-top {
   font-size: 22px;
+}
+.bookkit-ext-change-width {
+  font-size: 20px;
 }
 .bookkit-ext-page-reload {
   font-size: 24px;
@@ -442,6 +446,15 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     setTimeout(() => window.scrollTo(0, 0), 0);
   }
 
+  /** Toggles page width allowing to use all available horizontal space */
+  function togglePageWidth() {
+    const page = $(".uu-bookkit-page");
+    for(let i = 0; i < page.length; i++) {
+      const item = page.get(i);
+      const currentMaxWidth = item.style.maxWidth;
+      item.style.maxWidth = currentMaxWidth ? null : "5000px";
+    }
+  }
 
   // init of each bookkit page
   let initPage = function () {
@@ -540,8 +553,10 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     title.after(autocompleteInput);
 
     // update HTML - add icons and links
-    let refreshIcon = '<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-refresh"></span>';
-    let toc = '<span class="uu5-bricks-icon mdi mdi-table-of-contents bookkit-ext-toc"></span>';
+    const refreshIcon = '<span class="uu5-bricks-icon mdi mdi-reload bookkit-ext-refresh"></span>';
+    const toc = '<span class="uu5-bricks-icon mdi mdi-table-of-contents bookkit-ext-toc"></span>';
+    const changeWidth = '<span class="uu5-bricks-icon mdi mdi-desktop-mac bookkit-ext-change-width"</span>';
+    title.after(changeWidth);
     title.after(toc);
     title.after(refreshIcon);
 
@@ -921,6 +936,12 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
       if (!toc) addToc();
       else reloadCurrentPage();
+      return;
+    }
+
+    // Change maximum page witdh
+    if ($(e.target).hasClass("bookkit-ext-change-width")) {
+      togglePageWidth();
       return;
     }
 

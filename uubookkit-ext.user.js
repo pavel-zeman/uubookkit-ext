@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.18.0
+// @version      0.19.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -227,8 +227,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
   /** Returns an instance of the Update (or Edit) button */
   function getUpdateButton() {
-    // First selector works for bookkit, second one for dockit
-    return $("div.uu-bookkit-book-top div.uu-bookkit-control-bar-executives > button, div.plus4u5-app-executive-panel > button.uu5-bricks-button-filled");
+    return isBookkit ? $("div.uu-bookkit-book-top div.uu-bookkit-control-bar-executives > button") : $("div.uudockit-core-page-route-bar span.mdi-pencil").parent()
   }
 
   /**

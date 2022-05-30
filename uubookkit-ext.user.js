@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.21.0
+// @version      0.22.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -661,7 +661,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     let linkUrlPrefix = $(".plus4u5-app-go-to-page-link").first().attr("href") + "/page?code=";
     $(".uu5-bricks-section .uu5-bricks-link").each(function(item) {
       let linkUrl = $(this).attr("href");
-      let offset = linkUrl.indexOf(linkUrlPrefix);
+      let offset = linkUrl ? linkUrl.indexOf(linkUrlPrefix) : -1;
       if (offset > -1) {
         let pageCode = getPageCode(linkUrl);
         if (menuIndex[pageCode] === undefined) {

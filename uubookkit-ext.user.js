@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.20.0
+// @version      0.21.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -802,9 +802,9 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   let injectToHttpRequest = function () {
     let origOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
-      if (url.includes("loadBook")) {
+      if (url.includes("sys/uuAppWorkspace/load")) {
         this.addEventListener('load', function () {
-          currentBook = JSON.parse(this.responseText);
+          currentBook = JSON.parse(this.responseText).data;
           searchInit();
         });
       }
@@ -828,7 +828,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
     unsafeWindow.fetch = async (...args) => {
       const response = await originalFetch(...args);
       const url = args[0];
-      if (url.includes("loadBook") || url.includes("loadPage") || url.includes("getBookStructure") || url.includes("listCommentThreads") || url.includes("sheet/load")) {
+      if (url.includes("loadBook") || url.includes("loadPage") || url.includes("getBookStructure") || url.includes("listCommentThreads") || url.includes("sheet/load") || url.includes("sys/uuAppWorkspace/load")) {
         response.clone().json()
           .then(body => {
             if (url.includes("loadBook")) {
@@ -845,6 +845,8 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
             } else if (url.includes("getBookStructure")) {
               currentBookStructure = body;
               searchInit();
+            } else if (url.includes("sys/uuAppWorkspace/load")) {
+              currentBook = body.data;
             }
           });
       }

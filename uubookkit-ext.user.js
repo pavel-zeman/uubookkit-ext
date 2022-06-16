@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.22.0
+// @version      0.23.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -16,6 +16,7 @@
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.js
 // @resource     jqueryUiCss https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css
 // @grant        GM_getResourceText
+// @run-at       document-end
 // ==/UserScript==
 
 var jqueryUiCssText = GM_getResourceText ("jqueryUiCss");
@@ -847,6 +848,7 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
               searchInit();
             } else if (url.includes("sys/uuAppWorkspace/load")) {
               currentBook = body.data;
+              searchInit();
             }
           });
       }

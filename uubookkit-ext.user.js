@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.24.0
+// @version      0.25.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -248,7 +248,7 @@ const APPLICATION = {
   /** Returns an instance of the Update (or Edit) button */
   function getUpdateButton() {
     switch (application) {
-      case APPLICATION.bookit:
+      case APPLICATION.bookkit:
         return $("div.uu-bookkit-book-top div.uu-bookkit-control-bar-executives > button");
       case APPLICATION.dockit:
         return $("div.uudockit-core-page-route-bar span.mdi-pencil").parent();

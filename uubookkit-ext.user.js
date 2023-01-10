@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.23.0
+// @version      0.24.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @match        https://uuapp.plus4u.net/uu-bookkit-maing01/*
+// @match        https://uuapp.plus4u.net/uu-newskit-hubg01/*
 // @match        https://docs.plus4u.net/book*
 // @match        https://docs.plus4u.net/uaf/*
 // @match        https://uuapp.plus4u.net/uu-dockit-maing02/*
@@ -208,6 +209,12 @@ div.toc li {
 
 const LS_TOC_KEY = "BOOKIT_EXT_TOC";
 
+const APPLICATION = {
+  bookkit: "bookkit",
+  dockit: "dockit",
+  newskit: "newskit"
+};
+
 
 (function () {
   'use strict';
@@ -224,11 +231,30 @@ const LS_TOC_KEY = "BOOKIT_EXT_TOC";
   let copyMenuVisible = false;
   let supportedSubSectionTypes2 = [ "uu5-richtext-block", "uu-uuapp-designkit-business-use-case-list", "uucontentkit-table", "uu-uuapp-designkit-embedded-text"];
   let supportedSubSectionTypes1 = [ "uu5-bricks-section" ];
-  let isBookkit = window.location.href.indexOf("uu-dockit-") < 0;
+
+  let application;
+  const location = window.location.href;
+  if (location.indexOf("uu-dockit-") > 0) {
+    application = APPLICATION.dockit;
+  } else if (location.indexOf("uu-bookkit-") > 0) {
+    application = APPLICATION.bookkit;
+  } else if (location.indexOf("uu-newskit-") > 0) {
+    application = APPLICATION.newskit;
+  } else {
+    throw new Error("Unexpected application - " + location);
+  }
+  let isBookkit = application === APPLICATION.bookkit;
 
   /** Returns an instance of the Update (or Edit) button */
   function getUpdateButton() {
-    return isBookkit ? $("div.uu-bookkit-book-top div.uu-bookkit-control-bar-executives > button") : $("div.uudockit-core-page-route-bar span.mdi-pencil").parent()
+    switch (application) {
+      case APPLICATION.bookit:
+        return $("div.uu-bookkit-book-top div.uu-bookkit-control-bar-executives > button");
+      case APPLICATION.dockit:
+        return $("div.uudockit-core-page-route-bar span.mdi-pencil").parent();
+      case APPLICATION.newskit:
+        return $("div.uup-bricks-componentwrapper-header-actions > button");
+    }
   }
 
   /**

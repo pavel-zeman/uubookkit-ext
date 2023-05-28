@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.25.0
+// @version      0.26.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -208,6 +208,7 @@ div.toc li {
 `);
 
 const LS_TOC_KEY = "BOOKIT_EXT_TOC";
+const LS_WIDE_KEY = "BOOKIT_EXT_WIDE";
 
 const APPLICATION = {
   bookkit: "bookkit",
@@ -229,6 +230,7 @@ const APPLICATION = {
   let ctrlKey = false;
   let ctrlKeyTimeout = null;
   let copyMenuVisible = false;
+  let isWide = false;
   let supportedSubSectionTypes2 = [ "uu5-richtext-block", "uu-uuapp-designkit-business-use-case-list", "uucontentkit-table", "uu-uuapp-designkit-embedded-text"];
   let supportedSubSectionTypes1 = [ "uu5-bricks-section" ];
 
@@ -519,6 +521,15 @@ const APPLICATION = {
     setTimeout(() => window.scrollTo(0, 0), 0);
   }
 
+  function setPageWidth() {
+    isWide = localStorage.getItem(LS_WIDE_KEY) == "true";
+    const page = $(".uu-bookkit-page");
+    for(let i = 0; i < page.length; i++) {
+      const item = page.get(i);
+      item.style.maxWidth = isWide ? "5000px" : null;
+    }
+  }
+
   /** Toggles page width allowing to use all available horizontal space */
   function togglePageWidth() {
     const page = $(".uu-bookkit-page");
@@ -527,6 +538,8 @@ const APPLICATION = {
       const currentMaxWidth = item.style.maxWidth;
       item.style.maxWidth = currentMaxWidth ? null : "5000px";
     }
+    isWide = !isWide;
+    localStorage.setItem(LS_WIDE_KEY, isWide);
   }
 
   // init of each bookkit page
@@ -592,6 +605,8 @@ const APPLICATION = {
 
         // add table of content
         if (localStorage.getItem(LS_TOC_KEY) == "true") addToc();
+
+        setPageWidth();
 
         initAutocomplete($("#autocomplete-input"), menuIndex);
 

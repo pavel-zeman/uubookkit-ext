@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.26.0
+// @version      0.27.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -844,23 +844,25 @@ const APPLICATION = {
   let injectToHttpRequest = function () {
     let origOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
-      if (url.includes("sys/uuAppWorkspace/load")) {
-        this.addEventListener('load', function () {
-          currentBook = JSON.parse(this.responseText).data;
-          searchInit();
-        });
-      }
-      if (url.includes("loadPage") || url.includes("sheet/load")) {
-        this.addEventListener('load', function () {
-          currentPageData = JSON.parse(this.responseText);
-          initPage();
-        });
-      }
-      if (url.includes("getBookStructure")) {
-        this.addEventListener('load', function () {
-          currentBookStructure = JSON.parse(this.responseText);
-          searchInit();
-        });
+      if (url) {
+        if (url.includes("sys/uuAppWorkspace/load")) {
+          this.addEventListener('load', function () {
+            currentBook = JSON.parse(this.responseText).data;
+            searchInit();
+          });
+        }
+        if (url.includes("loadPage") || url.includes("sheet/load")) {
+          this.addEventListener('load', function () {
+            currentPageData = JSON.parse(this.responseText);
+            initPage();
+          });
+        }
+        if (url.includes("getBookStructure")) {
+          this.addEventListener('load', function () {
+            currentBookStructure = JSON.parse(this.responseText);
+            searchInit();
+          });
+        }
       }
       origOpen.apply(this, arguments);
     };

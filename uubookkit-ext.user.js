@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.27.0
+// @version      0.27.1
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
 // @match        https://uuos9.plus4u.net/uu-bookkitg01-main/*
 // @match        https://uuapp.plus4u.net/uu-bookkit-maing01/*
+// @exclude      https://uuapp.plus4u.net/uu-bookkit-maing01/*/getBinaryData*
 // @match        https://uuapp.plus4u.net/uu-newskit-hubg01/*
 // @match        https://docs.plus4u.net/book*
 // @match        https://docs.plus4u.net/uaf/*

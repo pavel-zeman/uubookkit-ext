@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.27.1
+// @version      0.27.2
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -1070,6 +1070,37 @@ const APPLICATION = {
     }
   });
 
+  /**
+   * The rich text editor in bookkit tries to save its data on Ctrl+S, which conflicts with our Ctrl+S shortcut.
+   * The Ctrl+S handler is registered for the #uuBookKit element. To prevent it from execution,
+   * we register custom keydown handler for an element lower in hierarchy.
+   */
+  function preventDefaultSave() {
+    const bookkitElement = document.querySelector("#uuBookKit > div.uu-bookkit-book-ready");
+    // The element is created only after the page is rendered
+    if (bookkitElement) {
+      // Register our own Ctrl+S handler
+      bookkitElement.onkeydown = (event) => {
+        if (event.ctrlKey && !event.shiftKey && (event.key === 's' || event.key === 'S') && isInEditMode()) {
+          // Save page data and prevent default Ctrl+S handler
+          // (but do not prevent Ctrl+Shift+S, which can still be used to save data using the default handler)
+          getUpdateButton().focus();
+          getUpdateButton().click();
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }
+    } else {
+      // No element was found, so try again in 1 second
+      setTimeout(preventDefaultSave, 1000);
+    }
+  }
+
+  if (isBookkit) {
+    setTimeout(preventDefaultSave, 1000);
+  }
+
+
   $(document).keydown(function (e) {
     switch (e.key) {
       case "e": // Start edit mode
@@ -1086,7 +1117,7 @@ const APPLICATION = {
 
       case "s": // With Ctrl - end edit mode and save data
       case "S":
-        if (e.ctrlKey && isInEditMode()) {
+        if (e.ctrlKey && !e.shiftKey && isInEditMode()) {
           getUpdateButton().focus();
           getUpdateButton().click();
           e.preventDefault(); // Do not trigger the default browser save handler

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.27.2
+// @version      0.28.0
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -9,6 +9,7 @@
 // @match        https://uuapp.plus4u.net/uu-bookkit-maing01/*
 // @exclude      https://uuapp.plus4u.net/uu-bookkit-maing01/*/getBinaryData*
 // @match        https://uuapp.plus4u.net/uu-newskit-hubg01/*
+// @match        https://uuapp.plus4u.net/uu-managementkit-maing02/*
 // @match        https://docs.plus4u.net/book*
 // @match        https://docs.plus4u.net/uaf/*
 // @match        https://uuapp.plus4u.net/uu-dockit-maing02/*
@@ -214,7 +215,8 @@ const LS_WIDE_KEY = "BOOKIT_EXT_WIDE";
 const APPLICATION = {
   bookkit: "bookkit",
   dockit: "dockit",
-  newskit: "newskit"
+  newskit: "newskit",
+  managementkit: "managementkit"
 };
 
 
@@ -243,6 +245,8 @@ const APPLICATION = {
     application = APPLICATION.bookkit;
   } else if (location.indexOf("uu-newskit-") > 0) {
     application = APPLICATION.newskit;
+  } else if (location.indexOf("uu-managementkit-") > 0) {
+    application = APPLICATION.managementkit;
   } else {
     throw new Error("Unexpected application - " + location);
   }
@@ -257,6 +261,10 @@ const APPLICATION = {
         return $("div.uudockit-core-page-route-bar span.mdi-pencil").parent();
       case APPLICATION.newskit:
         return $("div.uup-bricks-componentwrapper-header-actions > button");
+      case APPLICATION.managementkit:
+        return $("div > button > span.uugds-check, div > button > span.uugds-edit-inline").parent();
+      default:
+        throw new Error(`Unsupported application type to get update button: ${application}`);
     }
   }
 
@@ -405,7 +413,16 @@ const APPLICATION = {
 
   /** Checks, if the edit mode is currently on */
   function isInEditMode() {
-    return $(".uudcc-bricks-toolbar").length > 0;
+    switch (application) {
+      case APPLICATION.bookkit:
+      case APPLICATION.dockit:
+      case APPLICATION.newskit:
+        return $(".uudcc-bricks-toolbar").length > 0;
+      case APPLICATION.managementkit:
+        return $("div > button > span.uugds-check").length > 0;
+      default:
+        throw new Error(`Unsupported application type to get edit mode: ${application}`);
+    }
   }
 
   /** Adds table of contents to the page */
@@ -918,7 +935,6 @@ const APPLICATION = {
 
   // click on link in menu by its name
   let clickLinkByName = function (name) {
-    // console.log('Click link by name = "' + name + '"')
 
     // click to "Obsah stránky" to expand menu
     $('button.uu5-bricks-dropdown-button').each(function () {
@@ -930,7 +946,6 @@ const APPLICATION = {
     $('a.uu5-bricks-dropdown-item-link').each(function () {
       let item = $(this);
       // compare its text
-      // console.log(item.text(), name);
       if (item.text() === name) {
         click(item);
       }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         uuBookKit-ext
 // @namespace    https://github.com/PetrHavelka/uubookkit-ext
-// @version      0.28.0
+// @version      0.28.1
 // @description  Multiple Bookkit usability improvements
 // @author       Petr Havelka, Josef Jetmar, Ales Holy, Pavel Zeman
 // @match        https://uuos9.plus4u.net/uu-dockitg01-main/*
@@ -800,7 +800,7 @@ const APPLICATION = {
 
       // Select all names which include all words from the requested list
       this.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(" ").forEach(item => {
-        if (item) keys = keys.filter(key => options[key].name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(item));
+        if (item) keys = keys.filter(key => options[key].name.toLowerCase().normalize("NFD").replace(/[\u200b\u0300-\u036f]/g, "").includes(item));
       });
       // Order by complete path
       keys = keys.sort((a, b) => options[a].path.join("#").localeCompare(options[b].path.join("#")));
